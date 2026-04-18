@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<title>Mindful AI — Teman refleksi bertenaga AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--primary-soft); color: var(--primary-deep); }
+
+  :root {
+    --bg: #FAF7F2;
+    --bg-raised: #FFFFFF;
+    --bg-sunken: #F3EEE6;
+    --ink: #2A2A2B;
+    --ink-soft: #55524D;
+    --ink-muted: #8B867E;
+    --line: #E8E1D5;
+    --line-soft: #F0EADF;
+    --primary: #5DCAA5;
+    --primary-deep: #3FA886;
+    --primary-soft: #D8F0E5;
+    --accent: #F0997B;
+    --accent-deep: #D97B5C;
+    --accent-soft: #FBE3D8;
+    --crisis: #B85C4A;
+  }
+  .dark {
+    --bg: #1A1B1A;
+    --bg-raised: #232523;
+    --bg-sunken: #121312;
+    --ink: #EDE6D8;
+    --ink-soft: #B8B1A3;
+    --ink-muted: #7A7569;
+    --line: #2E302D;
+    --line-soft: #262826;
+    --primary-soft: #1E3830;
+    --accent-soft: #3A2821;
+  }
+
+  @keyframes mindfulBreathe {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.06); opacity: 1; }
+  }
+  @keyframes mindfulSpin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes mindfulPulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes mindfulFadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--ink-muted); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--primary-deep); outline-offset: 2px; }
+
+  /* Warm page gradient — subtle radial washes for "cantik & calm" */
+  .mindful-ambient {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 12% 8%,  color-mix(in oklab, var(--primary-soft) 70%, transparent) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, color-mix(in oklab, var(--accent-soft) 55%, transparent) 0%, transparent 65%);
+    opacity: 0.9;
+  }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="src/tokens.js"></script>
+<script src="src/seedContent.js"></script>
+<script type="text/babel" src="src/primitives.jsx"></script>
+<script type="text/babel" src="src/landing.jsx"></script>
+<script type="text/babel" src="src/session.jsx"></script>
+<script type="text/babel" src="src/result.jsx"></script>
+<script type="text/babel" src="src/dashboard.jsx"></script>
+<script type="text/babel" src="src/crisis.jsx"></script>
+<script type="text/babel" src="src/tweaks.jsx"></script>
+</head>
+<body>
+<div class="mindful-ambient"></div>
+<div id="root" style="position: relative; z-index: 1;"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState: useStateApp, useEffect: useEffectApp } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "palette": "sand",
+  "dark": false,
+  "questions": 9,
+  "tone": "reflective"
+}/*EDITMODE-END*/;
+
+function applyPalette(paletteId) {
+  const p = window.ACCENT_PRESETS.find(x => x.id === paletteId) || window.ACCENT_PRESETS[0];
+  const root = document.documentElement;
+  root.style.setProperty('--primary', p.primary);
+  root.style.setProperty('--primary-deep', p.primaryDeep);
+  root.style.setProperty('--primary-soft', p.primarySoft);
+  root.style.setProperty('--accent', p.accent);
+  root.style.setProperty('--accent-deep', p.accentDeep);
+  root.style.setProperty('--accent-soft', p.accentSoft);
+}
+
+function App() {
+  const [screen, setScreen] = useStateApp('landing');
+  const [analysis, setAnalysis] = useStateApp(null);
+  const [crisisCtx, setCrisisCtx] = useStateApp(null);
+  const [hasHistory, setHasHistory] = useStateApp(false);
+
+  const [tweaks, setTweaksState] = useStateApp(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('mindful_tweaks') || 'null');
+      return { ...TWEAK_DEFAULTS, ...(saved || {}) };
+    } catch { return TWEAK_DEFAULTS; }
+  });
+  const [editMode, setEditMode] = useStateApp(false);
+
+  useEffectApp(() => {
+    applyPalette(tweaks.palette);
+    document.documentElement.classList.toggle('dark', !!tweaks.dark);
+    localStorage.setItem('mindful_tweaks', JSON.stringify(tweaks));
+  }, [tweaks]);
+
+  useEffectApp(() => {
+    const saved = localStorage.getItem('mindful_screen');
+    const savedAnalysis = localStorage.getItem('mindful_analysis');
+    if (savedAnalysis) {
+      try { setAnalysis(JSON.parse(savedAnalysis)); setHasHistory(true); } catch {}
+    }
+    if (saved && ['landing','dashboard'].includes(saved)) setScreen(saved);
+  }, []);
+  useEffectApp(() => { localStorage.setItem('mindful_screen', screen); }, [screen]);
+
+  useEffectApp(() => {
+    const onMsg = (e) => {
+      if (!e.data || !e.data.type) return;
+      if (e.data.type === '__activate_edit_mode') setEditMode(true);
+      if (e.data.type === '__deactivate_edit_mode') setEditMode(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const setTweaks = (partial) => {
+    setTweaksState(prev => {
+      const next = { ...prev, ...partial };
+      try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits: partial }, '*'); } catch {}
+      return next;
+    });
+  };
+
+  const startSession = () => setScreen('ritual');
+  const beginAfterRitual = () => setScreen('session');
+
+  const handleFinish = ({ transcript, analysis }) => {
+    setAnalysis(analysis);
+    setHasHistory(true);
+    localStorage.setItem('mindful_analysis', JSON.stringify(analysis));
+    setScreen('analyzing');
+    // Short calming pause before reveal (lambat per PRD)
+    setTimeout(() => setScreen('result'), 2600);
+  };
+
+  const handleCrisis = (ctx) => { setCrisisCtx(ctx); setScreen('crisis'); };
+
+  return (
+    <>
+      {screen === 'landing' && (
+        <LandingScreen
+          onStart={startSession}
+          onToDashboard={() => setScreen('dashboard')}
+          hasHistory={hasHistory}
+        />
+      )}
+      {screen === 'ritual' && (
+        <RitualScreen onReady={beginAfterRitual} onCancel={() => setScreen('landing')} />
+      )}
+      {screen === 'session' && (
+        <SessionScreen
+          totalQuestions={tweaks.questions}
+          onFinish={handleFinish}
+          onCrisis={handleCrisis}
+          onExit={() => setScreen('landing')}
+        />
+      )}
+      {screen === 'analyzing' && <AnalyzingScreen />}
+      {screen === 'result' && analysis && (
+        <ResultScreen
+          analysis={analysis}
+          onRestart={() => setScreen('ritual')}
+          onToDashboard={() => setScreen('dashboard')}
+          onSave={() => {}}
+        />
+      )}
+      {screen === 'dashboard' && (
+        <DashboardScreen
+          analysis={analysis}
+          onNewSession={() => setScreen('ritual')}
+          onBack={() => setScreen('landing')}
+          onMoodCheckin={() => setScreen('ritual')}
+        />
+      )}
+      {screen === 'crisis' && (
+        <CrisisScreen
+          context={crisisCtx}
+          onContinue={() => setScreen('session')}
+          onPause={() => setScreen('landing')}
+          onExit={() => setScreen('landing')}
+        />
+      )}
+
+      {editMode && <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} />}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
