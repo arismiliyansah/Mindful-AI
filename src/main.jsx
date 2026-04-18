@@ -83,6 +83,10 @@ function App() {
   }, [screen]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [screen]);
+
+  useEffect(() => {
     const onMsg = (e) => {
       if (!e.data || !e.data.type) return;
       if (e.data.type === '__activate_edit_mode') setEditMode(true);
@@ -159,6 +163,7 @@ function App() {
 
   return (
     <I18nProvider lang={tweaks.lang || 'id'} setLang={setLang}>
+      <div key={screen} className="mf-screen">
       {screen === 'languagePicker' && (
         <LanguagePickerScreen onSelect={handleLanguagePick} />
       )}
@@ -245,6 +250,7 @@ function App() {
           onExit={() => setScreen('landing')}
         />
       )}
+      </div>
 
       {editMode && <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} />}
     </I18nProvider>

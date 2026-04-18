@@ -71,6 +71,13 @@ html[lang="zh-TW"] body { font-family: 'Noto Sans TC', 'Inter', -apple-system, s
   from { opacity: 0; transform: scale(0.4); }
   to   { opacity: 1; transform: scale(1); }
 }
+@keyframes mindfulScreenIn {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+/* Screen-level page transition — applied via key={screen} remount */
+.mf-screen { animation: mindfulScreenIn 520ms cubic-bezier(.2,.8,.2,1) both; }
 
 /* Smooth theme + palette transitions */
 html, body { transition: background-color 600ms ease, color 600ms ease; }
@@ -131,10 +138,11 @@ html, body { transition: background-color 600ms ease, color 600ms ease; }
 
 @media (prefers-reduced-motion: reduce) {
   .mf-rise, .mf-trend-line, .mf-trend-area, .mf-trend-dot,
-  .mindful-ambient {
+  .mf-screen, .mindful-ambient {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+    filter: none !important;
     stroke-dashoffset: 0 !important;
   }
   .mf-card-hover:hover, .mf-press:hover, .mf-press:active { transform: none; }
