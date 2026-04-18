@@ -301,23 +301,50 @@ const LANG_SHORT = { id: 'ID', en: 'EN', 'zh-CN': '简', 'zh-TW': '繁' };
 const LangToggle = () => {
   const { t, lang, setLang } = useT();
   const [open, setOpen] = useState(false);
-  const wrapRef = useRef(null);
+  const [coords, setCoords] = useState(null);
+  const btnRef = useRef(null);
+  const popRef = useRef(null);
+
+  // Recompute popover position from button rect — keeps it on-screen even when
+  // ancestors clip (body overflow-x:hidden, transformed wrappers, etc.).
+  const place = () => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const margin = 12;
+    const popWidth = 200;
+    let right = vw - r.right;
+    if (right + popWidth > vw - margin) right = margin;
+    setCoords({ top: r.bottom + 8, right });
+  };
 
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    place();
+    const onDoc = (e) => {
+      if (btnRef.current?.contains(e.target)) return;
+      if (popRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
     const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    const onResize = () => place();
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onResize, true);
     return () => {
       document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onResize, true);
     };
   }, [open]);
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <>
       <button
+        ref={btnRef}
         onClick={() => setOpen(o => !o)}
         aria-label={t('lang.toggleLabel')}
         title={LANG_META[lang]?.native || ''}
@@ -338,14 +365,15 @@ const LangToggle = () => {
       >
         {LANG_SHORT[lang] || 'ID'}
       </button>
-      {open && (
+      {open && coords && (
         <div
+          ref={popRef}
           role="listbox"
           style={{
-            position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 60,
+            position: 'fixed', top: coords.top, right: coords.right, zIndex: 100,
             background: 'var(--bg-raised)', border: '1px solid var(--line)',
-            borderRadius: 14, padding: 6, minWidth: 180,
-            boxShadow: '0 20px 60px -20px rgba(0,0,0,0.18)',
+            borderRadius: 14, padding: 6, minWidth: 200,
+            boxShadow: '0 20px 60px -20px rgba(0,0,0,0.28)',
             fontFamily: 'Inter, sans-serif',
           }}
         >
@@ -373,7 +401,7 @@ const LangToggle = () => {
           })}
         </div>
       )}
-    </div>
+    </>
   );
 };
 
